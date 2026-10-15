@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt  # 그래프 출력용 라이브러리
 from pathlib import Path  # 파일 경로 처리용
 
 # 이 파일의 위치를 기준으로 데이터 폴더를 찾는다(어느 폴더에서 실행해도 동작)
-DATA_DIR = Path(__file__).resolve().parents[2] / 'data'
+DATA_DIR = Path(__file__).resolve().parents[1] / 'data'
 
 df = pd.read_csv(DATA_DIR / 'crimeRatesByState2005.csv')  # 2005년 미국 주별 범죄율 데이터 읽기
 print(df.head())  # 앞 5행 확인
