@@ -111,3 +111,6 @@ runs/
 *.jpeg
 *.svg
 *.pdf
+
+# Agent
+*.md
