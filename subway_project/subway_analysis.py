@@ -285,24 +285,52 @@ fig.savefig(RESULTS_DIR / '02_complaint_composition_ratio.png', dpi=150)
 plt.close(fig)
 print("[+] 저장: results/02_complaint_composition_ratio.png")
 
-# Chart 3: 카이제곱 분포 및 기각역
-fig, ax = plt.subplots(figsize=(9, 4.5))
+# Chart 3: 카이제곱 분포 곡선 및 관측 통계량 위치 시각화 (2분할: 원본 스케일 + 로그 스케일)
+fig, (ax_c1, ax_c2) = plt.subplots(1, 2, figsize=(14, 5))
 chi_crit = stats.chi2.ppf(0.95, dof2)
-x_chi = np.linspace(0, max(50, chi_crit + 15), 500)
-y_chi = stats.chi2.pdf(x_chi, dof2)
 
-ax.plot(x_chi, y_chi, color='#495057', linewidth=2)
-ax.fill_between(x_chi, y_chi, where=(x_chi >= chi_crit), color='#e03131', alpha=0.35, label=f'기각역 (χ² ≥ {chi_crit:.2f}, α=0.05)')
-ax.set_title(f'카이제곱 분포 (자유도 {dof2}) : 관측 통계량({chi2_stat:,.0f})이 극단적 기각역에 위치', fontsize=12, fontweight='bold')
-ax.set_xlabel('χ² 값', fontsize=10.5)
-ax.set_ylabel('확률밀도', fontsize=10.5)
-ax.annotate(f'관측된 χ² = {chi2_stat:,.1f}\n(p-value < 0.001)',
-            xy=(45, 0.01), xytext=(35, 0.04),
-            arrowprops=dict(facecolor='#1971c2', shrink=0.08, width=1.5, headwidth=6),
-            fontsize=10.5, fontweight='bold', color='#1971c2')
-ax.legend(frameon=False, loc='upper right')
-ax.grid(axis='y', linestyle=':', alpha=0.4)
-ax.spines[['top', 'right']].set_visible(False)
+# (1) 왼쪽: 원본 스케일 (임계값 32.7 부근의 기각역과 분포 형상)
+x_chi1 = np.linspace(0, 55, 500)
+y_chi1 = stats.chi2.pdf(x_chi1, dof2)
+ax_c1.plot(x_chi1, y_chi1, color='#495057', linewidth=2)
+ax_c1.fill_between(x_chi1, y_chi1, where=(x_chi1 >= chi_crit), color='#e03131', alpha=0.35, label=f'기각역 (χ² ≥ {chi_crit:.2f})')
+ax_c1.axvline(chi_crit, color='#e03131', linestyle='--', linewidth=1.8, label=f'임계값 ({chi_crit:.1f})')
+ax_c1.set_xlim(0, 55)
+ax_c1.set_ylim(0, max(y_chi1) * 1.15)
+ax_c1.set_title(f'(A) 카이제곱 분포 (자유도 {dof2}) 및 임계 기각역', fontsize=12, fontweight='bold')
+ax_c1.set_xlabel('χ² 값', fontsize=10.5)
+ax_c1.set_ylabel('확률밀도', fontsize=10.5)
+ax_c1.legend(frameon=False, loc='upper right', fontsize=9.5)
+ax_c1.grid(axis='y', linestyle=':', alpha=0.4)
+ax_c1.spines[['top', 'right']].set_visible(False)
+
+# 화살표 및 안내 박스로 오른쪽 끝 방향 명시
+ax_c1.annotate(f'관측 통계량 χ² = {chi2_stat:,.1f} >>\n(우측 극단 바깥 270배 거리 위치, p < 0.001)',
+               xy=(54, 0.005), xytext=(22, 0.038),
+               arrowprops=dict(facecolor='#1971c2', edgecolor='black', shrink=0.05, width=2, headwidth=8),
+               fontsize=9.5, fontweight='bold', color='#1971c2',
+               bbox=dict(boxstyle='round,pad=0.4', facecolor='#e7f5ff', edgecolor='#1971c2'))
+
+# (2) 오른쪽: 로그 스케일 축소 (0부터 20,000까지 관측 위치를 단일 축 위에 명확히 표시)
+x_chi2 = np.logspace(0, np.log10(25000), 1000)
+y_chi2 = stats.chi2.pdf(x_chi2, dof2)
+ax_c2.plot(x_chi2, y_chi2, color='#495057', linewidth=2)
+ax_c2.set_xscale('log')
+ax_c2.fill_between(x_chi2, y_chi2, where=(x_chi2 >= chi_crit), color='#e03131', alpha=0.35, label='기각역 범위')
+ax_c2.axvline(chi_crit, color='#e03131', linestyle='--', linewidth=1.8, label=f'임계값 ({chi_crit:.1f})')
+ax_c2.axvline(chi2_stat, color='#1971c2', linestyle='-', linewidth=2.2, label=f'관측 통계량 ({chi2_stat:,.1f})')
+ax_c2.scatter([chi2_stat], [0], color='#1971c2', s=90, zorder=5, edgecolor='black')
+
+ax_c2.text(chi2_stat * 1.15, max(y_chi2) * 0.45, f'관측한 χ² 위치\n= {chi2_stat:,.1f}\n(극단적 기각역)',
+           color='#1971c2', fontweight='bold', fontsize=9.5, ha='left')
+ax_c2.text(chi_crit * 0.4, max(y_chi2) * 0.75, f'임계값\n{chi_crit:.1f}', color='#e03131', fontweight='bold', fontsize=9.5)
+ax_c2.set_title('(B) 로그 스케일: 임계값과 실제 관측 통계량 위치 비교', fontsize=12, fontweight='bold')
+ax_c2.set_xlabel('χ² 값 (로그 스케일)', fontsize=10.5)
+ax_c2.legend(loc='upper left', frameon=False, fontsize=9.5)
+ax_c2.grid(True, linestyle=':', alpha=0.4)
+ax_c2.spines[['top', 'right']].set_visible(False)
+
+plt.suptitle(f'가설 2 카이제곱 독립성 검정 통계량 위치 검증 (관측 χ² = {chi2_stat:,.1f}, p-value < 0.001)', fontsize=13, fontweight='bold')
 fig.tight_layout()
 fig.savefig(RESULTS_DIR / '03_chi_square_distribution.png', dpi=150)
 plt.close(fig)
