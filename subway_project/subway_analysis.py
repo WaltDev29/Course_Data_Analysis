@@ -285,52 +285,42 @@ fig.savefig(RESULTS_DIR / '02_complaint_composition_ratio.png', dpi=150)
 plt.close(fig)
 print("[+] 저장: results/02_complaint_composition_ratio.png")
 
-# Chart 3: 카이제곱 분포 곡선 및 관측 통계량 위치 시각화 (2분할: 원본 스케일 + 로그 스케일)
-fig, (ax_c1, ax_c2) = plt.subplots(1, 2, figsize=(14, 5))
+# Chart 3: [가설 2] 카이제곱 독립성 검정 분포 곡선 및 기각역 시각화 (텍스트 겹침 완벽 분리)
+fig, ax = plt.subplots(figsize=(9.5, 4.8))
 chi_crit = stats.chi2.ppf(0.95, dof2)
+x_chi = np.linspace(0, 55, 600)
+y_chi = stats.chi2.pdf(x_chi, dof2)
 
-# (1) 왼쪽: 원본 스케일 (임계값 32.7 부근의 기각역과 분포 형상)
-x_chi1 = np.linspace(0, 55, 500)
-y_chi1 = stats.chi2.pdf(x_chi1, dof2)
-ax_c1.plot(x_chi1, y_chi1, color='#495057', linewidth=2)
-ax_c1.fill_between(x_chi1, y_chi1, where=(x_chi1 >= chi_crit), color='#e03131', alpha=0.35, label=f'기각역 (χ² ≥ {chi_crit:.2f})')
-ax_c1.axvline(chi_crit, color='#e03131', linestyle='--', linewidth=1.8, label=f'임계값 ({chi_crit:.1f})')
-ax_c1.set_xlim(0, 55)
-ax_c1.set_ylim(0, max(y_chi1) * 1.15)
-ax_c1.set_title(f'(A) 카이제곱 분포 (자유도 {dof2}) 및 임계 기각역', fontsize=12, fontweight='bold')
-ax_c1.set_xlabel('χ² 값', fontsize=10.5)
-ax_c1.set_ylabel('확률밀도', fontsize=10.5)
-ax_c1.legend(frameon=False, loc='upper right', fontsize=9.5)
-ax_c1.grid(axis='y', linestyle=':', alpha=0.4)
-ax_c1.spines[['top', 'right']].set_visible(False)
+ax.plot(x_chi, y_chi, color='#2b2d42', linewidth=2.2, label=f'카이제곱 분포 (df={dof2})')
+ax.fill_between(x_chi, y_chi, where=(x_chi >= chi_crit), color='#fa5252', alpha=0.35,
+                label=f'기각역 (χ² ≥ {chi_crit:.2f}, α=0.05)')
+ax.fill_between(x_chi, y_chi, where=(x_chi < chi_crit), color='#4dabf7', alpha=0.15,
+                label=f'채택역 (χ² < {chi_crit:.2f})')
 
-# 화살표 및 안내 박스로 오른쪽 끝 방향 명시
-ax_c1.annotate(f'관측 통계량 χ² = {chi2_stat:,.1f} >>\n(우측 극단 바깥 270배 거리 위치, p < 0.001)',
-               xy=(54, 0.005), xytext=(22, 0.038),
-               arrowprops=dict(facecolor='#1971c2', edgecolor='black', shrink=0.05, width=2, headwidth=8),
-               fontsize=9.5, fontweight='bold', color='#1971c2',
-               bbox=dict(boxstyle='round,pad=0.4', facecolor='#e7f5ff', edgecolor='#1971c2'))
+ax.axvline(chi_crit, color='#e03131', linestyle='--', linewidth=1.8)
+ax.text(chi_crit - 0.8, 0.022, f'임계값 χ² = {chi_crit:.2f}
+(유의수준 α = 0.05)',
+        color='#c92a2a', fontsize=9.5, fontweight='bold', ha='right', va='center',
+        bbox=dict(boxstyle='square,pad=0.25', facecolor='white', edgecolor='#e03131', alpha=0.95))
 
-# (2) 오른쪽: 로그 스케일 축소 (0부터 20,000까지 관측 위치를 단일 축 위에 명확히 표시)
-x_chi2 = np.logspace(0, np.log10(25000), 1000)
-y_chi2 = stats.chi2.pdf(x_chi2, dof2)
-ax_c2.plot(x_chi2, y_chi2, color='#495057', linewidth=2)
-ax_c2.set_xscale('log')
-ax_c2.fill_between(x_chi2, y_chi2, where=(x_chi2 >= chi_crit), color='#e03131', alpha=0.35, label='기각역 범위')
-ax_c2.axvline(chi_crit, color='#e03131', linestyle='--', linewidth=1.8, label=f'임계값 ({chi_crit:.1f})')
-ax_c2.axvline(chi2_stat, color='#1971c2', linestyle='-', linewidth=2.2, label=f'관측 통계량 ({chi2_stat:,.1f})')
-ax_c2.scatter([chi2_stat], [0], color='#1971c2', s=90, zorder=5, edgecolor='black')
+ax.annotate(
+    f'관측된 검정통계량 χ² = {chi2_stat:,.2f}
+(p-value < 0.0001, 기각역 극단적 심도 위치)
+>> 귀무가설 H0 강력 기각',
+    xy=(53, 0.002), xytext=(35, 0.048),
+    arrowprops=dict(facecolor='#1864ab', edgecolor='#1864ab', shrink=0.08, width=2, headwidth=7),
+    bbox=dict(boxstyle='round,pad=0.5', facecolor='#e7f5ff', edgecolor='#1864ab', linewidth=1.5),
+    fontsize=9.5, fontweight='bold', color='#1864ab'
+)
 
-ax_c2.text(chi2_stat * 1.15, max(y_chi2) * 0.45, f'관측한 χ² 위치\n= {chi2_stat:,.1f}\n(극단적 기각역)',
-           color='#1971c2', fontweight='bold', fontsize=9.5, ha='left')
-ax_c2.text(chi_crit * 0.4, max(y_chi2) * 0.75, f'임계값\n{chi_crit:.1f}', color='#e03131', fontweight='bold', fontsize=9.5)
-ax_c2.set_title('(B) 로그 스케일: 임계값과 실제 관측 통계량 위치 비교', fontsize=12, fontweight='bold')
-ax_c2.set_xlabel('χ² 값 (로그 스케일)', fontsize=10.5)
-ax_c2.legend(loc='upper left', frameon=False, fontsize=9.5)
-ax_c2.grid(True, linestyle=':', alpha=0.4)
-ax_c2.spines[['top', 'right']].set_visible(False)
-
-plt.suptitle(f'가설 2 카이제곱 독립성 검정 통계량 위치 검증 (관측 χ² = {chi2_stat:,.1f}, p-value < 0.001)', fontsize=13, fontweight='bold')
+ax.set_title('[가설 2] 노선별 민원 유형 카이제곱 독립성 검정 기각역 및 분포 (df=21)', fontsize=12.5, fontweight='bold', pad=12)
+ax.set_xlabel('χ² 통계량', fontsize=10.5, fontweight='bold')
+ax.set_ylabel('확률밀도 (Probability Density)', fontsize=10.5, fontweight='bold')
+ax.set_xlim(0, 55)
+ax.set_ylim(0, max(y_chi) * 1.20)
+ax.legend(loc='upper right', frameon=True, facecolor='white', edgecolor='#dee2e6', fontsize=9.5)
+ax.grid(True, linestyle=':', alpha=0.5)
+ax.spines[['top', 'right']].set_visible(False)
 fig.tight_layout()
 fig.savefig(RESULTS_DIR / '03_chi_square_distribution.png', dpi=150)
 plt.close(fig)
@@ -417,6 +407,136 @@ fig.tight_layout()
 fig.savefig(RESULTS_DIR / '06_comprehensive_correlation_heatmap.png', dpi=150)
 plt.close(fig)
 print("[+] 저장: results/06_comprehensive_correlation_heatmap.png")
+
+# Chart 7: [가설 1] 카이제곱 적합도 검정 분포 및 기각역 (텍스트 분리)
+dof1 = len(df_master) - 1
+chi1_crit = stats.chi2.ppf(0.95, dof1)
+fig, ax = plt.subplots(figsize=(9.5, 4.8))
+x1 = np.linspace(0, 32, 600)
+y1 = stats.chi2.pdf(x1, dof1)
+
+ax.plot(x1, y1, color='#2b2d42', linewidth=2.2, label=f'카이제곱 분포 (df={dof1})')
+ax.fill_between(x1, y1, where=(x1 >= chi1_crit), color='#fa5252', alpha=0.35,
+                label=f'기각역 (χ² ≥ {chi1_crit:.2f}, α=0.05)')
+ax.fill_between(x1, y1, where=(x1 < chi1_crit), color='#4dabf7', alpha=0.15,
+                label=f'채택역 (χ² < {chi1_crit:.2f})')
+
+ax.axvline(chi1_crit, color='#e03131', linestyle='--', linewidth=1.8)
+ax.text(chi1_crit - 0.5, max(y1)*0.6, f'임계값 χ² = {chi1_crit:.2f}
+(유의수준 α = 0.05)',
+        color='#c92a2a', fontsize=9.5, fontweight='bold', ha='right', va='center',
+        bbox=dict(boxstyle='square,pad=0.2', facecolor='white', edgecolor='#e03131', alpha=0.9))
+
+ax.annotate(
+    f'관측된 검정통계량 χ² = {chi1_stat:,.2f}
+(p-value < 0.0001, 기각역 극단적 심도 위치)
+>> 귀무가설 H0 강력 기각',
+    xy=(31, 0.003), xytext=(17, 0.08),
+    arrowprops=dict(facecolor='#1864ab', edgecolor='#1864ab', shrink=0.08, width=2, headwidth=7),
+    bbox=dict(boxstyle='round,pad=0.5', facecolor='#e7f5ff', edgecolor='#1864ab', linewidth=1.5),
+    fontsize=9.5, fontweight='bold', color='#1864ab'
+)
+
+ax.set_title('[가설 1] 호선별 민원 발생률 카이제곱 적합도 검정 기각역 및 분포 (df=7)', fontsize=12.5, fontweight='bold', pad=12)
+ax.set_xlabel('χ² 통계량', fontsize=10.5, fontweight='bold')
+ax.set_ylabel('확률밀도 (Probability Density)', fontsize=10.5, fontweight='bold')
+ax.set_xlim(0, 32)
+ax.set_ylim(0, max(y1) * 1.18)
+ax.legend(loc='upper right', frameon=True, facecolor='white', edgecolor='#dee2e6', fontsize=9.5)
+ax.grid(True, linestyle=':', alpha=0.5)
+ax.spines[['top', 'right']].set_visible(False)
+fig.tight_layout()
+fig.savefig(RESULTS_DIR / '07_h1_chi_square_distribution.png', dpi=150)
+fig.savefig(RESULTS_DIR / '01_h1_chi_square_distribution.png', dpi=150)
+plt.close(fig)
+print("[+] 저장: results/07_h1_chi_square_distribution.png")
+
+# Chart 8: [가설 3] 피어슨 상관분석 Student t-분포 및 양측 기각역 (조합별 검정통계량 완비)
+dof3 = len(df_master) - 2
+t_crit = stats.t.ppf(0.975, dof3)
+
+pairs = [
+    ('성인 일반 vs 냉난방', r_adult_temp, p_adult_temp, '#d6336c'),
+    ('우대권 vs 냉난방', r_elder_temp, p_elder_temp, '#7048e8'),
+    ('우대권 vs 질서저해', r_elder_order, p_elder_order, '#1971c2'),
+    ('청소년 vs 이용예절', r_youth_manner, p_youth_manner, '#0ca678')
+]
+
+fig, ax = plt.subplots(figsize=(10.2, 5.2))
+x3 = np.linspace(-4.5, 4.5, 600)
+y3 = stats.t.pdf(x3, dof3)
+
+ax.plot(x3, y3, color='#2b2d42', linewidth=2.2, label=f'Student t-분포 (df={dof3})')
+
+# 좌우 기각역
+ax.fill_between(x3, y3, where=(x3 <= -t_crit), color='#fa5252', alpha=0.35,
+                label=f'기각역 (|t| ≥ {t_crit:.2f}, 양측 α=0.05)')
+ax.fill_between(x3, y3, where=(x3 >= t_crit), color='#fa5252', alpha=0.35)
+
+# 채택역
+ax.fill_between(x3, y3, where=((x3 > -t_crit) & (x3 < t_crit)), color='#4dabf7', alpha=0.15,
+                label=f'채택역 (|t| < {t_crit:.2f}, 귀무가설 H0 기각 불가)')
+
+ax.axvline(-t_crit, color='#e03131', linestyle='--', linewidth=1.8)
+ax.axvline(t_crit, color='#e03131', linestyle='--', linewidth=1.8)
+
+ax.text(-t_crit - 0.12, 0.16, f'임계값 t = -{t_crit:.2f}
+(유의수준 α = 0.05)',
+        color='#c92a2a', ha='right', va='center', fontsize=9, fontweight='bold',
+        bbox=dict(boxstyle='square,pad=0.25', facecolor='white', edgecolor='#e03131', alpha=0.95))
+ax.text(t_crit + 0.12, 0.16, f'임계값 t = +{t_crit:.2f}
+(유의수준 α = 0.05)',
+        color='#c92a2a', ha='left', va='center', fontsize=9, fontweight='bold',
+        bbox=dict(boxstyle='square,pad=0.25', facecolor='white', edgecolor='#e03131', alpha=0.95))
+
+for label, r_val, p_val, col in pairs:
+    t_val = r_val * np.sqrt(dof3) / np.sqrt(1 - r_val**2)
+    pdf_val = stats.t.pdf(t_val, dof3)
+    
+    ax.scatter([t_val], [pdf_val], color=col, s=75, zorder=5, edgecolor='black', linewidth=1.2)
+    ax.vlines(t_val, 0, pdf_val, color=col, linestyle=':', linewidth=1.5, alpha=0.7)
+    
+    if '성인' in label:
+        ax.annotate(f'{label}
+t = {t_val:+.2f} (p = {p_val:.3f})',
+                    xy=(t_val, pdf_val), xytext=(t_val - 0.1, pdf_val + 0.08),
+                    arrowprops=dict(facecolor=col, edgecolor=col, shrink=0.08, width=1.2, headwidth=4.5),
+                    bbox=dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor=col, linewidth=1.2),
+                    fontsize=8.5, fontweight='bold', color=col, ha='right')
+    elif '우대권 vs 냉난방' in label:
+        ax.annotate(f'{label}
+t = {t_val:+.2f} (p = {p_val:.3f})',
+                    xy=(t_val, pdf_val), xytext=(t_val + 0.1, pdf_val + 0.08),
+                    arrowprops=dict(facecolor=col, edgecolor=col, shrink=0.08, width=1.2, headwidth=4.5),
+                    bbox=dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor=col, linewidth=1.2),
+                    fontsize=8.5, fontweight='bold', color=col, ha='left')
+    elif '질서저해' in label:
+        ax.annotate(f'{label}
+t = {t_val:+.2f} (p = {p_val:.3f})',
+                    xy=(t_val, pdf_val), xytext=(t_val - 0.4, pdf_val + 0.07),
+                    arrowprops=dict(facecolor=col, edgecolor=col, shrink=0.08, width=1.2, headwidth=4.5),
+                    bbox=dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor=col, linewidth=1.2),
+                    fontsize=8.5, fontweight='bold', color=col, ha='right')
+    elif '청소년' in label:
+        ax.annotate(f'{label}
+t = {t_val:+.2f} (p = {p_val:.3f})',
+                    xy=(t_val, pdf_val), xytext=(t_val + 0.4, pdf_val + 0.06),
+                    arrowprops=dict(facecolor=col, edgecolor=col, shrink=0.08, width=1.2, headwidth=4.5),
+                    bbox=dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor=col, linewidth=1.2),
+                    fontsize=8.5, fontweight='bold', color=col, ha='left')
+
+ax.set_title('[가설 3] 승객 연령 특성-민원 상관분석 검정 Student t-분포 및 양측 기각역 (df=6)', fontsize=12.5, fontweight='bold', pad=12)
+ax.set_xlabel('t 통계량 (기준 상관계수 임계치 |r| ≥ 0.71)', fontsize=10.5, fontweight='bold')
+ax.set_ylabel('확률밀도 (Probability Density)', fontsize=10.5, fontweight='bold')
+ax.set_xlim(-4.5, 4.5)
+ax.set_ylim(0, max(y3) * 1.30)
+ax.legend(loc='upper right', frameon=True, facecolor='white', edgecolor='#dee2e6', fontsize=9.2)
+ax.grid(True, linestyle=':', alpha=0.5)
+ax.spines[['top', 'right']].set_visible(False)
+fig.tight_layout()
+fig.savefig(RESULTS_DIR / '08_h3_t_distribution_rejection.png', dpi=150)
+plt.close(fig)
+print("[+] 저장: results/08_h3_t_distribution_rejection.png")
 
 print("\n" + "=" * 70)
 print("[완료] 별도의 파일 생성 없이 메모리 DataFrame으로 모든 검정 및 시각화를 완료했습니다.")
